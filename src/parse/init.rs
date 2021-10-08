@@ -2,6 +2,7 @@ use proc_macro2::TokenStream as TokenStream2;
 
 use syn::{parse, ItemFn};
 
+use crate::modality_probe::parse::modality_probe_args;
 use crate::{
     ast::{Init, InitArgs},
     parse::util,
@@ -14,12 +15,19 @@ impl InitArgs {
 }
 
 impl Init {
-    pub(crate) fn parse(args: InitArgs, item: ItemFn) -> parse::Result<Self> {
+    pub(crate) fn parse(args: InitArgs, mut item: ItemFn) -> parse::Result<Self> {
         let valid_signature = util::check_fn_signature(&item) && item.sig.inputs.len() == 1;
 
         let span = item.sig.ident.span();
 
         let name = item.sig.ident.to_string();
+
+        let probe = item
+            .attrs
+            .iter()
+            .position(|attr| util::attr_eq(attr, "modality_probe"))
+            .map(|pos| modality_probe_args(item.attrs.remove(pos).tokens))
+            .transpose()?;
 
         if valid_signature {
             if let Ok((user_shared_struct, user_local_struct)) =
@@ -35,6 +43,7 @@ impl Init {
                             stmts: item.block.stmts,
                             user_shared_struct,
                             user_local_struct,
+                            probe,
                         });
                     }
                 }

@@ -21,6 +21,7 @@ mod accessors;
 pub mod analyze;
 pub mod ast;
 mod check;
+mod modality_probe;
 mod optimize;
 mod parse;
 #[cfg(test)]

@@ -1,6 +1,7 @@
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{parse, ItemFn};
 
+use crate::modality_probe::parse::modality_probe_args;
 use crate::{
     ast::{Idle, IdleArgs},
     parse::util,
@@ -13,12 +14,19 @@ impl IdleArgs {
 }
 
 impl Idle {
-    pub(crate) fn parse(args: IdleArgs, item: ItemFn) -> parse::Result<Self> {
+    pub(crate) fn parse(args: IdleArgs, mut item: ItemFn) -> parse::Result<Self> {
         let valid_signature = util::check_fn_signature(&item)
             && item.sig.inputs.len() == 1
             && util::type_is_bottom(&item.sig.output);
 
         let name = item.sig.ident.to_string();
+
+        let probe = item
+            .attrs
+            .iter()
+            .position(|attr| util::attr_eq(attr, "modality_probe"))
+            .map(|pos| modality_probe_args(item.attrs.remove(pos).tokens))
+            .transpose()?;
 
         if valid_signature {
             if let Some((context, Ok(rest))) = util::parse_inputs(item.sig.inputs, &name) {
@@ -29,6 +37,7 @@ impl Idle {
                         context,
                         name: item.sig.ident,
                         stmts: item.block.stmts,
+                        probe,
                     });
                 }
             }

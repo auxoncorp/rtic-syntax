@@ -1,12 +1,13 @@
 use syn::{parse, ForeignItemFn, ItemFn, Stmt};
 
+use crate::modality_probe::parse::modality_probe_args;
 use crate::{
     ast::{HardwareTask, HardwareTaskArgs},
     parse::util,
 };
 
 impl HardwareTask {
-    pub(crate) fn parse(args: HardwareTaskArgs, item: ItemFn) -> parse::Result<Self> {
+    pub(crate) fn parse(args: HardwareTaskArgs, mut item: ItemFn) -> parse::Result<Self> {
         let span = item.sig.ident.span();
         let valid_signature = util::check_fn_signature(&item)
             && item.sig.inputs.len() == 1
@@ -21,6 +22,13 @@ impl HardwareTask {
             ));
         }
 
+        let probe = item
+            .attrs
+            .iter()
+            .position(|attr| util::attr_eq(attr, "modality_probe"))
+            .map(|pos| modality_probe_args(item.attrs.remove(pos).tokens))
+            .transpose()?;
+
         if valid_signature {
             if let Some((context, Ok(rest))) = util::parse_inputs(item.sig.inputs, &name) {
                 if rest.is_empty() {
@@ -33,6 +41,7 @@ impl HardwareTask {
                         context,
                         stmts: item.block.stmts,
                         is_extern: false,
+                        probe,
                     });
                 }
             }
@@ -51,7 +60,7 @@ impl HardwareTask {
 impl HardwareTask {
     pub(crate) fn parse_foreign(
         args: HardwareTaskArgs,
-        item: ForeignItemFn,
+        mut item: ForeignItemFn,
     ) -> parse::Result<Self> {
         let span = item.sig.ident.span();
         let valid_signature = util::check_foreign_fn_signature(&item)
@@ -67,6 +76,13 @@ impl HardwareTask {
             ));
         }
 
+        let probe = item
+            .attrs
+            .iter()
+            .position(|attr| util::attr_eq(attr, "modality_probe"))
+            .map(|pos| modality_probe_args(item.attrs.remove(pos).tokens))
+            .transpose()?;
+
         if valid_signature {
             if let Some((context, Ok(rest))) = util::parse_inputs(item.sig.inputs, &name) {
                 if rest.is_empty() {
@@ -79,6 +95,7 @@ impl HardwareTask {
                         context,
                         stmts: Vec::<Stmt>::new(),
                         is_extern: true,
+                        probe,
                     });
                 }
             }

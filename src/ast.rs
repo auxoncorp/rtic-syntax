@@ -2,6 +2,7 @@
 
 use syn::{Attribute, Expr, Ident, Item, ItemUse, Pat, PatType, Path, Stmt, Type};
 
+use crate::modality_probe::ast::ModalityProbeArgs;
 use crate::Map;
 
 /// The `#[app]` attribute
@@ -90,6 +91,9 @@ pub struct Init {
 
     /// The name of the user provided local resources struct
     pub user_local_struct: Ident,
+
+    /// Modality probe metadata
+    pub probe: Option<ModalityProbeArgs>,
 }
 
 /// `init` context metadata
@@ -126,6 +130,9 @@ pub struct Idle {
 
     /// The statements that make up this `idle` function
     pub stmts: Vec<Stmt>,
+
+    /// Modality probe metadata
+    pub probe: Option<ModalityProbeArgs>,
 }
 
 /// `idle` context metadata
@@ -241,6 +248,9 @@ pub struct SoftwareTask {
 
     /// The task is declared externally
     pub is_extern: bool,
+
+    /// Modality probe metadata
+    pub probe: Option<ModalityProbeArgs>,
 }
 
 /// Software task metadata
@@ -292,6 +302,9 @@ pub struct HardwareTask {
 
     /// The task is declared externally
     pub is_extern: bool,
+
+    /// Modality probe metadata
+    pub probe: Option<ModalityProbeArgs>,
 }
 
 /// Hardware task metadata
